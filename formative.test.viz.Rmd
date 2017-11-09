@@ -1,10 +1,9 @@
 ---
 title: "Formative Test Visualization"
-author: "HUDK4050"
 date: "11/9/2017"
 output: html_document
 ---
-
+=======
 
 ```{r, echo=FALSE}
 #Input your data processing steps here
@@ -22,3 +21,103 @@ D1 <-
 
 ```
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+D1 <- read.csv("formative1-results-DI.csv", na.strings=c("","NA"),stringsAsFactors=FALSE)
+#clean up missing entries
+#D1$Q6[is.na(D1$Q6)] <- "Did not answer"
+D1$attached.rmd[is.na(D1$attached.rmd)] <- "No"
+D1$pull.request[is.na(D1$pull.request)] <- "No"
+D1 <- D1[,c(3,5,6,1,2,4,7,8,9,10,11,12,13,14,15,16)]
+D1 <- dplyr::select(D1, 4:16)
+```
+
+```{r echo=FALSE}
+# Correlation
+#change word responses to numerical characters
+D1[D1=="Did not answer"]<-"3"
+D1[D1=="No"]<-"2"
+D1[D1=="Yes"]<-"1"
+D1$Q6[is.na(D1$Q6)] <- "3"
+
+
+#change characters to numbers
+D1 <- as.matrix(sapply(D1, as.numeric))
+
+# cor(D1)
+# library(corrplot)
+# M <- as.matrix(cor(D1))
+# corrplot(M, is.corr = FALSE, method = "circle")
+```
+
+```{r echo=FALSE}
+# Cluster
+F2 = scale(D1)
+
+# remove NAN, which all students share same answers, from the dataset
+F3 = F2[,colSums(is.nan(F2)) != nrow(F2)]
+
+# create "fit" that contains all the details of clustering
+fit <- kmeans(F3, 2)
+
+# attach clusters to the original dataframe
+F4 <- data.frame(F3, fit$cluster)
+names(F4) <- c("1","2","3","4","5","6","7","8","9","10","11","12","13","cluster")
+# "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29"
+F5 <- tidyr::gather(F4, "question","answer",1:13)
+
+F6 <- F5 %>% group_by(question, cluster)
+#F6 <- summarise(F6, avg=mean(answer))
+
+#F6$question <- as.numeric(F6$question)
+F6$cluster <- as.factor(F6$cluster)
+
+# ggplot(F6, aes(question, answer, fill = factor(cluster))) + geom_boxplot() + xlab("Question") + ylab("Average Answer") + scale_x_discrete(breaks=c("1","2","3","4","5","6","7","8","9","10","11","12"), limits=c("1","2","3","4","5","6","7","8","9","10","11","12"),labels=c("pull request",".rmd file","Git/RStudio","DI suffix","report sum","new df","tidyr","row names","to matrix","transpose","student/student", "diagonal")) + theme(axis.text.x = element_text(angle=45))
+```
+
+```{r echo=FALSE}
+# Scale
+# F2 = scale(D1)
+# 
+# # remove NAN, which all students share same answers, from the dataset
+# F3 = F2[,colSums(is.nan(F2)) != nrow(F2)]
+# 
+# # create "fit" that contains all the details of clustering
+# fit <- kmeans(F3, 2)
+# 
+# # attach clusters to the original dataframe
+# F4 <- data.frame(D1, fit$cluster)
+# names(F4) <- c("1","2","3","4","5","6","7","8","9","10","11","12","13","cluster")
+# # "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29"
+# F5 <- tidyr::gather(F4, "question","answer",1:13)
+# 
+# F6 <- F5 %>% group_by(question, cluster)
+# #F6 <- summarise(F6, avg=mean(answer))
+# 
+# #F6$question <- as.numeric(F6$question)
+# F6$cluster <- as.factor(F6$cluster)
+# 
+# # ggplot(F6, aes(question, answer, fill = factor(cluster))) + geom_boxplot() + xlab("Question") + ylab("Average Answer") + scale_x_discrete(breaks=c("1","2","3","4","5","6","7","8","9","10","11","12"), limits=c("1","2","3","4","5","6","7","8","9","10","11","12"),
+# #         labels=c("pull request",".rmd file","Git/RStudio","DI suffix","report sum","new df","tidyr","row names","to matrix","transpose","student/student", "diagonal")) + theme(axis.text.x = element_text(angle=45))
+```
+
+
+```{r echo=FALSE}
+# noscale 
+cor(D1)
+library(corrplot)
+M <- as.matrix(cor(D1))
+
+par(mfrow=c(2,2))
+ggplot(F6, aes(question, answer, fill = factor(cluster))) + geom_boxplot() + xlab("Question") + ylab("Average Answer") + scale_x_discrete(breaks=c("1","2","3","4","5","6","7","8","9","10","11","12"), limits=c("1","2","3","4","5","6","7","8","9","10","11","12"),
+       labels=c("pull request",".rmd file","Git/RStudio","DI suffix","report sum","new df","tidyr","row names","to matrix","transpose","student/student", "diagonal")) + theme(axis.text.x = element_text(angle=45))
+corrplot(M, is.corr = FALSE, method = "circle")
+# curve(tan(x),from=-pi,to=pi,main="Tangent")
+# curve(sin(x)^2/cos(x),from=-pi,to=pi,main="Sin^2/Cosine")
+```
