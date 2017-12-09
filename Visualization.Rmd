@@ -1,0 +1,42 @@
+---
+title: "Visualization"
+author: "Chen Zheng"
+date: "November 9, 2017"
+output: html_document
+---
+#Correctness Rate for Formative Tes t1 by Question
+```{r}
+D1 <- read.csv("C:/Users/Chen/Documents/CUTC/courses/2017 Fall_Core Methods of Educational Data Mining/1107Visualization/formative-test1/formative1-results-DI.csv")
+
+#View(D1)
+D2<-D1[,c(-1,-2)]
+
+for (i in 1:ncol(D2)){
+  D2[,i]<-ifelse(D2[,i]=="Yes",1,0)
+}
+
+D2<-data.matrix(D2)
+
+correct<-colSums(D2)/nrow(D2)
+
+correct
+
+plot(x=1:14,y=correct, xlab="Question Number", ylab="Correctness", main="Correctness Rate for Formative Test 1 by Question", pch=16, type="b")
+
+```
+### Students' Performance Visualization
+```{r}
+D2<-D1[,c(-1,-2)]
+
+D3<-as.data.frame(D2=="Yes")
+D3$correct<-rowSums(D3)
+D3$percentage<-D3$correct/14
+
+barplot(D3$percentage,names.arg = 1:29,ylab="Correctness", main="Accuracy for Students' Performance in Formative Test 1 by Student")
+```
+
+#Student Performance Histogram
+```{r}
+hist(D3$correct, xlab="Number of correct answers", main="Student Performance")
+```
+

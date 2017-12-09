@@ -8,6 +8,137 @@ In the following excercise you will be creating a Q-Matrix for the formative tes
 
 1. Start by building your own Q-Matrix from the questions on the formative test. You need to define a set of concepts and then decide which concepts are required for each question. Create a matrix in R that displays your Q-Matrix.
 
+
+```{r}
+Q1<-matrix(, nrow=3, ncol=14)
+rownames(Q1)<-c("Data Prep","Data Frame","Matrix")
+colnames(Q1) <- c("Q1","Q2","Q3","Q4","Q5","Q6","Q7","Q8","Q9","Q10","Q11","Q12","Q13","Q14")
+Q1[,]<-0
+Q1[1,1:5]<-1
+Q1[2,6:11]<-1
+Q1[3,12:14]<-1
+#View(Q1)
+```
+
+2. Define all possible concept states for your Q-Matrix. A concept state is the possible combinations of concepts represented by 1 and 0. For example, if there are two concepts the possible concept states would be `00`, `01`, `10` and `11`.
+
+```{r}
+#There are 3 concepts. The possible concept states would be 
+#Concept state
+cs<-expand.grid(rep(list(0:1),3))
+colnames(cs)<-as.list(row.names(Q1))
+cs<-as.matrix(cs)
+cs
+```
+
+
+3. Generate the Ideal Response Vectors for each concept state. The Ideal Response Vector would be the pattern of answers you would expect a student to give for each concept state. Can you do this in code (not manually)? Store these as individual vectors.
+
+```{r}
+#Ideal response
+ir<-cs%*%Q1
+#View(ir)
+
+```
+
+4. Now upload the class answer data and convert it to 1s and 0s. Each row of the class data is a response vector. How many unique response vectors are there in the class data? How many Ideal Response Vectors did you generate in the previous step?
+
+```{r}
+D1 <- read.csv("C:/Users/Chen/Documents/CUTC/courses/2017 Fall_Core Methods of Educational Data Mining/1107Visualization/formative-test1/formative1-results-DI.csv")
+
+#View(D1)
+D2<-D1[,c(-1,-2)]
+
+for (i in 1:ncol(D2)){
+  D2[,i]<-ifelse(D2[,i]=="Yes",1,0)
+}
+
+library(dplyr)
+library(tidyr)
+
+D2.unique<-unique(D2)
+
+nrow(D2.unique)
+#There are 20 unique response vectors in the class data.
+nrow(ir)
+#I generated 8 ideal response vectors in the previous step.
+
+```
+
+
+5. Compare each response vector to the Ideal Response Vectors using Hamming Distance (the number of differing elements in each vector). You will need to install the `e1071` package and use the code `hamming.distance()`. 
+
+```{r}
+#install.packages("e1071")
+#library(e1071)
+dist<-matrix(nrow=8, ncol=20)
+
+for (i in 1:8){
+  D3<-as.matrix(rbind(D2.unique,ir[i,]))
+  temp<-hamming.distance(D3)
+  dist[i,]<-temp[nrow(temp),1:20]
+}
+
+rownames(dist)<-c("ir1","ir2","ir3","ir4","ir5","ir6","ir7","ir8")
+colnames(dist)<-row.names(D2.unique)
+```
+
+6. Match each response vector to the Ideal Response Vector for which there is the lowest Hamming Distance.
+
+```{r}
+ir.match<-matrix(nrow=1,ncol=ncol(dist))
+low.ham <- matrix(nrow=1,ncol=ncol(dist))
+
+for(i in 1:ncol(dist)){
+  temp<-min(dist[,i])
+  ir.match[i]<-which(dist[,i]==temp)
+  low.ham[i]<-min(dist[,i])
+}
+
+rownames(ir.match)<-"irv.low"
+colnames(ir.match)<-row.names(D2.unique)
+ir.match
+
+rownames(low.ham)<-"Lowest Ham"
+colnames(low.ham)<-row.names(D2.unique)
+low.ham
+```
+
+
+7. For each response vector multiply this lowest Hamming Distance by the number of students that answered with that response vector and sum all these values together. This is the error score for your Q-Matrix.
+
+```{r}
+count<-matrix(nrow=nrow(D2.unique),ncol=1)
+
+for (i in 1:nrow(D2.unique)){
+  equal<-0
+  for (j in 1:nrow(D2)){
+    if(all(D2.unique[i,]==D2[j,])){
+      equal<-equal+1
+    }
+  }
+  count[i,1]<-equal
+}
+
+count
+
+error.score<-low.ham%*%count
+error.score
+```
+
+
+8. What change could you make to your Q-Matrix to attempt to lower its error score?
+```{r}
+count
+low.ham
+
+Ds<-rbind(ir.match,low.ham)
+Ds
+
+#I could add one or two more concepts to lower the lowest hamming distances.
+```
+
+
 2. Define all possible concept states for your Q-Matrix. A concept state is the possible combinations of concepts represented by 1 and 0. For example, if there are two concepts the possible concept states would be `00`, `01`, `10` and `11`.
 
 3. Generate the Ideal Response Vectors for each concept state. The Ideal Response Vector would be the pattern of answers you would expect a student to give for each concept state. Can you do this in code (not manually)? Store these as individual vectors.
@@ -21,3 +152,4 @@ In the following excercise you will be creating a Q-Matrix for the formative tes
 7. For each response vector multiply this lowest Hamming Distance by the number of students that answered with that response vector and sum all these values together. This is the error score for your Q-Matrix.
 
 8. What change could you make to your Q-Matrix to attempt to lower its error score?
+
